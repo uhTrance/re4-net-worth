@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RE4 Net Worth</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* ---- Case File theme -------------------------------------------------
+     Dark ink on cream lined paper, Courier throughout, red ribbon ink for
+     the key figure only. Dark mode (the default) swaps the paper for dark
+     card and the ink for cream; it follows the game window's setting. */
+  :root {
+    --bg:        #1d1813;   /* the desk the file sits on */
+    --paper:     #efe7d4;
+    --paper-line:#e3d8bf;
+    --paper-lt:  #faf4e6;
+    --edge:      #c4b590;
+    --ink:       #28231d;
+    --ink-2:     #4a4238;
+    --dim:       #8a7d66;
+    --red:       #962218;   /* the hero figure, warnings */
+    --green:     #3d6b2e;   /* good / done */
+    --amber:     #9a6b14;
+    --blue:      #245a92;
+
+    /* Only these read on the dark desk; everything else assumes paper. */
+    --on-desk:        #cdbfa4;
+    --on-desk-strong: #f3ead8;
+
+    --cf-shadow: 0 1px 0 #fffaf0 inset, 0 2px 4px rgba(0,0,0,.30),
+                 0 14px 28px rgba(0,0,0,.40), 0 34px 70px rgba(0,0,0,.50);
+  }
+  :root[data-theme="dark"] {
+    --bg:        #0e0c09;
+    --paper:     #1f1c17;
+    --paper-line:#29251f;
+    --paper-lt:  #2a261f;
+    --edge:      #5c513e;
+    --ink:       #ece3cf;
+    --ink-2:     #cfc4ad;
+    --dim:       #9a8d74;
+    --red:       #e2574a;
+    --green:     #7cc06a;
+    --amber:     #d9a33f;
+    --blue:      #6fa3e0;
+    --cf-shadow: 0 1px 0 #3a342a inset, 0 2px 4px rgba(0,0,0,.40),
+                 0 14px 28px rgba(0,0,0,.50), 0 34px 70px rgba(0,0,0,.60);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    padding: 24px 32px 64px;
+  }
+
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+
+  #grandTotal {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--red);
+    font-variant-numeric: tabular-nums;
+    margin: 4px 0 24px;
+  }
+
+  #grandTotal .ptas {
+    font-size: 20px;
+    color: var(--dim);
+    font-weight: 400;
+    margin-left: 8px;
+  }
+
+  .breakdown {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+    font-size: 13px;
+    color: var(--dim);
+  }
+
+  .breakdown span {
+    background: rgba(40,35,29,0.07);
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+
+  .breakdown b {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .section {
+    margin-bottom: 32px;
+  }
+
+  .section-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--red);
+    border-bottom: 1px solid rgba(40,35,29,0.18);
+    padding-bottom: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th {
+    text-align: left;
+    color: var(--dim);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+  }
+
+  th.num, td.num {
+    text-align: right;
+  }
+
+  td {
+    padding: 6px 8px;
+    border-top: 1px solid rgba(40,35,29,0.07);
+  }
+
+  tr:hover td {
+    background: rgba(40,35,29,0.04);
+  }
+
+  .name {
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .gems-used {
+    color: var(--dim);
+    font-size: 12px;
+  }
+
+  /* Green = this gem is already sitting in the treasure. Red = the optimiser
+     wants it here but it is not in yet. Amber = something is in a socket that
+     should not be, so it has to come out before the rest will fit. */
+  .gem-ok {
+    color: var(--green);
+    font-weight: 600;
+  }
+
+  .gem-missing {
+    color: var(--red);
+    font-weight: 600;
+  }
+
+  .gem-remove {
+    color: var(--amber);
+    font-weight: 600;
+    text-decoration: line-through;
+  }
+
+  .row-done .name::after {
+    content: "OK";
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--green);
+    background: rgba(61,107,46,0.14);
+    border-radius: 4px;
+    padding: 1px 5px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .fix-note {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  .base-note {
+    color: var(--dim);
+  }
+
+  #emptyState {
+    color: var(--dim);
+    font-style: italic;
+  }
+
+  /* Advisory sections (Trade shop, Spinels) never feed the grand total -
+     Spinels are a closed currency with no path back to pesetas, only into a
+     purchase. A visually distinct header colour keeps that boundary obvious
+     rather than implying these numbers are already counted above. */
+  .section-header.advisory {
+    color: var(--blue);
+  }
+
+  .advisory-note {
+    font-size: 12px;
+    color: var(--dim);
+    font-style: italic;
+    margin: -6px 0 10px;
+  }
+
+  .plan-list {
+    margin: 0;
+    padding-left: 22px;
+    font-size: 14px;
+    line-height: 1.9;
+  }
+
+  .plan-list li::marker {
+    color: var(--dim);
+    font-size: 12px;
+  }
+
+  .plan-list .step-gain {
+    color: var(--green);
+    font-weight: 600;
+    margin-left: 6px;
+  }
+
+  .plan-list .step-note {
+    color: var(--dim);
+    font-size: 12px;
+    margin-left: 6px;
+  }
+
+  .plan-list .step-blocked {
+    color: var(--amber);
+    font-size: 12px;
+    margin-left: 6px;
+  }
+
+  /* ==== Case File conversion =======================================
+     Page furniture restated as paper and typewriter ink. Appended last so
+     it wins on equal specificity without needing !important. */
+
+  body {
+    font-family: "Courier New", Courier, monospace;
+    font-weight: 700;
+  }
+
+  h1 { color: var(--on-desk-strong); letter-spacing: .18em; text-transform: uppercase; font-size: 15px; }
+
+  /* The hero figure, on the desk rather than on paper - so it needs the
+     lifted red, not the paper red, to carry any contrast. */
+  #grandTotal { color: #d9604f; letter-spacing: .02em; }
+  #grandTotal .ptas { color: var(--on-desk); font-weight: 700; }
+  .breakdown { color: var(--on-desk); }
+  .breakdown span {
+    background: rgba(239,231,212,.10);
+    border: 1px solid rgba(239,231,212,.22);
+  }
+  .breakdown b { color: var(--on-desk-strong); }
+
+  /* Each section is a sheet of lined paper. */
+  .section {
+    background: repeating-linear-gradient(180deg,
+      var(--paper) 0 31px, var(--paper-line) 31px 32px);
+    border: 1px solid var(--edge);
+    border-radius: 14px;
+    box-shadow: var(--cf-shadow);
+    color: var(--ink);
+    padding: 16px 20px 18px;
+  }
+  .section-header {
+    color: var(--ink-2); letter-spacing: .16em; text-transform: uppercase;
+    border-bottom: 2px solid var(--edge);
+  }
+  .section-header.advisory { color: var(--red); }
+
+  table { color: var(--ink); }
+  th { color: var(--dim); letter-spacing: .12em; border-bottom: 2px solid var(--edge); }
+  td { border-top: 1px solid var(--edge); }
+  tr:hover td { background: var(--paper-lt); }
+  .name { color: var(--ink); }
+
+  /* Done rows: struck through as well as ticked, so the state does not
+     rest on a colour difference alone. */
+  .row-done .name { color: var(--dim); text-decoration: line-through; }
+
+  .gem-ok { color: var(--green); }
+  .gem-missing { color: var(--red); }
+  .gem-remove { color: var(--amber); }
+  .gems-used { color: var(--dim); }
+  .fix-note, .base-note, .advisory-note { color: var(--dim); }
+  .plan-list .step-gain { color: var(--green); }
+  .plan-list .step-note { color: var(--dim); }
+  .plan-list .step-blocked { color: var(--red); }
+  .plan-list li::marker { color: var(--red); }
+
+  #emptyState { color: var(--on-desk); }
+
+  .status { font-size: 12px; color: var(--on-desk); margin: 6px 0 14px; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px;
+         vertical-align: middle; background: #e0a34a; }
+  .dot.live { background: #6fbf5a; }
+  .dot.off { background: #d9604f; }
+
+
+  /* Thin hairlines disappear once scaled on some displays; give the paper
+     edges something to hold onto at capture size. */
+  .section { border-width: 2px; }
+</style>
+</head>
+<body>
+
+  <h1>RE4 Net Worth</h1>
+  <div class="status"><span class="dot" id="dot"></span><span id="statusText">Waiting for the game.</span></div>
+  <div id="grandTotal">-- <span class="ptas">ptas</span></div>
+
+  <div class="breakdown" id="breakdown"></div>
+
+  <!-- One ordered list of everything actionable, assembled from the sections
+       below so there is a single place to work from at the merchant. Order is
+       execution order, not value order: you cannot spend unclaimed Spinels
+       until you hand the requests in, and you cannot socket a gem you have
+       not bought yet. -->
+  <div class="section" id="planSection" style="display:none">
+    <div class="section-header"><span>The Plan</span><span id="planGain"></span></div>
+    <ol id="planList" class="plan-list"></ol>
+  </div>
+
+  <!-- Order is deliberate: the treasure sections carry the actionable advice
+       (what to combine with what), so they sit above the passive inventory
+       listings. Leftover Gems follows them because it is the tail of the same
+       story - the gems the optimiser could not profitably place. -->
+  <div class="section" id="treasuresSection" style="display:none">
+    <div class="section-header"><span>Combined Treasures</span><span id="treasuresTotal"></span></div>
+    <table>
+      <thead><tr><th>Treasure</th><th class="num">Base</th><th>Gems Used</th><th class="num">Final</th></tr></thead>
+      <tbody id="treasuresBody"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="plainTreasuresSection" style="display:none">
+    <div class="section-header"><span>Treasures (sell as-is, not gemstones)</span><span id="plainTreasuresTotal"></span></div>
+    <table>
+      <thead><tr><th>Name</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Total</th></tr></thead>
+      <tbody id="plainTreasuresBody"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="leftoverSection" style="display:none">
+    <div class="section-header"><span>Leftover Gems (not used in any combination)</span><span id="leftoverTotal"></span></div>
+    <table>
+      <thead><tr><th>Name</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Total</th></tr></thead>
+      <tbody id="leftoverBody"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="itemsSection" style="display:none">
+    <div class="section-header"><span>Inventory Items</span><span id="itemsTotal"></span></div>
+    <table>
+      <thead><tr><th>Name</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Total</th></tr></thead>
+      <tbody id="itemsBody"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="storageSection" style="display:none">
+    <div class="section-header"><span>Storage</span><span id="storageTotal"></span></div>
+    <table>
+      <thead><tr><th>Name</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Total</th></tr></thead>
+      <tbody id="storageBody"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="keyItemsSection" style="display:none">
+    <div class="section-header"><span>Key Items (sellable only)</span><span id="keyItemsTotal"></span></div>
+    <table>
+      <thead><tr><th>Name</th><th class="num">Count</th><th class="num">Unit</th><th class="num">Total</th></tr></thead>
+      <tbody id="keyItemsBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Herbs are counted at their best COMBINED value, not as-is, since
+       combining is free and one-way. G+R+Y sells for 10,000 against 4,500 of
+       parts, so the difference is often significant. -->
+  <div class="section" id="herbSection" style="display:none">
+    <div class="section-header"><span>Herbs (valued combined)</span><span id="herbTotal"></span></div>
+    <table>
+      <thead><tr><th>Holding</th><th class="num">Count</th><th class="num">Unit</th><th class="num">As-is</th></tr></thead>
+      <tbody id="herbBody"></tbody>
+    </table>
+    <div id="herbStepsBlock" style="display:none">
+      <div class="section-header" style="font-size:14px; margin-top:12px"><span>Combine these</span></div>
+      <table><tbody id="herbStepsBody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Advisory, deliberately outside the total: crafting cannot be undone and
+       ammo has gameplay value, so counting it would assume you would convert
+       every resource purely to sell. Base yields only - the bonus-ammo chance
+       is upside, not a guarantee, and must not inflate a floor figure. -->
+  <div class="section" id="craftSection" style="display:none">
+    <div class="section-header advisory"><span>Ammo Crafting (not counted)</span><span id="craftGain"></span></div>
+    <div class="advisory-note">Irreversible, and you probably want the ammo - shown so you can judge, not folded into net worth.</div>
+    <table>
+      <thead><tr><th>Craft</th><th class="num">Times</th><th class="num">Rounds</th><th class="num">Worth</th></tr></thead>
+      <tbody id="craftBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Two different claims live in this section, so they are visually split:
+       the combine plan below IS counted in the grand total above (buying
+       these specific gems/treasures and combining them is a real, reversible
+       gain - gems bought here un-socket the same as any other), while the
+       raw resale table beneath it stays advisory-only, since Spinels only
+       convert to pesetas by spending them, and most of the catalog (weapons,
+       upgrades, the treasure map) isn't part of the combine plan at all.
+       Separate Ways only; the section simply stays hidden outside that
+       campaign. -->
+  <div class="section" id="tradeSection" style="display:none">
+    <div class="section-header"><span>Trade Shop (Spinels: <span id="spinelCount">0</span>)</span></div>
+
+    <div id="tradePlanBlock" style="display:none">
+      <div class="section-header" style="font-size:14px"><span>Combine plan (counted in net worth)</span><span id="tradePlanGain"></span></div>
+      <table style="margin-bottom:10px">
+        <thead><tr><th>Shopping list</th><th class="num">Spinel Cost</th><th class="num">Count</th></tr></thead>
+        <tbody id="tradePlanBody"></tbody>
+      </table>
+      <table>
+        <thead><tr><th>Combine into</th><th class="num">Base</th><th>Gems Used</th><th class="num">Final</th></tr></thead>
+        <tbody id="tradeComboBody"></tbody>
+      </table>
+    </div>
+
+    <div class="section-header advisory" style="font-size:14px; margin-top:16px"><span>Full catalog (resale value, not counted)</span><span id="tradeTotal"></span></div>
+    <table>
+      <thead><tr><th>Name</th><th class="num">Spinel Cost</th><th class="num">Count</th><th class="num">Resale Value</th></tr></thead>
+      <tbody id="tradeBody"></tbody>
+    </table>
+  </div>
+
+  <div id="emptyState" style="display:none">No data yet. Start the game with re4_net_worth.dll installed and load a save.</div>
+
+<script>
+  const DATA_PATH = "net_worth.js";
+  const POLL_MS = 1000;
+
+  function fmt(n) {
+    return Math.round(n).toLocaleString("en-US");
+  }
+
+  // Compares what the optimiser wants in a treasure against what is actually
+  // socketed, as multisets - three Rubies recommended and two in place should
+  // mark exactly one as missing, not all three.
+  //
+  // Gems come back out at no cost, so a mismatch is never lost value, only a
+  // trip to the merchant. That is why this is a colour hint rather than
+  // something that moves the headline total.
+  function gemStatus(t) {
+    const want = (t.gemsUsed || []).map((x) => x.name || "(unknown)");
+
+    // Older builds of the DLL do not report socket contents at all. Absent the
+    // field there is nothing to compare against, so show the plain list rather
+    // than marking every gem missing and crying wolf.
+    if (!Array.isArray(t.actualGems)) {
+      return {
+        done: false,
+        html: want.length ? want.join(", ") : '<span class="base-note">(no gems combined)</span>',
+      };
+    }
+
+    const have = t.actualGems.slice();
+
+    if (!want.length) {
+      return { done: !have.length, html: '<span class="base-note">(no gems combined)</span>' };
+    }
+
+    // Tick off each wanted gem against the pool actually in the sockets.
+    const pool = {};
+    for (const n of have) pool[n] = (pool[n] || 0) + 1;
+
+    const parts = want.map((n) => {
+      if (pool[n] > 0) {
+        pool[n] -= 1;
+        return `<span class="gem-ok">${n}</span>`;
+      }
+      return `<span class="gem-missing">${n}</span>`;
+    });
+
+    // Anything left in the pool is socketed but not wanted here.
+    const strays = [];
+    for (const n of Object.keys(pool)) {
+      for (let i = 0; i < pool[n]; i++) strays.push(n);
+    }
+
+    let html = parts.join(", ");
+    if (strays.length) {
+      html += ` &nbsp;<span class="gem-remove">${strays.join(", ")}</span>`;
+      html += `<span class="fix-note">take out ${strays.join(", ")} first</span>`;
+    }
+
+    const done = !strays.length && !parts.some((p) => p.includes("gem-missing"));
+    return { done, html };
+  }
+
+  function renderItemsTable(bodyEl, items) {
+    bodyEl.innerHTML = "";
+    const sorted = [...items].sort((a, b) => b.totalPrice - a.totalPrice);
+    for (const it of sorted) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="name">${it.name || "(unknown)"}</td><td class="num">${it.count}</td><td class="num">${fmt(it.unitPrice)}</td><td class="num">${fmt(it.totalPrice)}</td>`;
+      bodyEl.appendChild(tr);
+    }
+  }
+
+  function render(data) {
+    document.getElementById("grandTotal").innerHTML = fmt(data.total) + ' <span class="ptas">ptas</span>';
+
+    const breakdown = document.getElementById("breakdown");
+    const treasuresTotal = (data.treasures || []).reduce((s, t) => s + t.finalPrice, 0);
+    const itemsTotal = (data.items || []).reduce((s, i) => s + i.totalPrice, 0);
+    const plainTreasuresTotal = (data.plainTreasures || []).reduce((s, i) => s + i.totalPrice, 0);
+    const leftoverTotal = (data.leftoverGems || []).reduce((s, g) => s + g.totalPrice, 0);
+    const storageTotal = (data.storage || []).reduce((s, i) => s + i.totalPrice, 0);
+    const keyItemsTotal = (data.keyItems || []).reduce((s, i) => s + i.totalPrice, 0);
+    const tradeShopGain = data.tradeShopGain || 0;
+    const tradeShopRecommended = data.tradeShopRecommended || [];
+    breakdown.innerHTML = `
+      <span>Pesetas on hand: <b>${fmt(data.pesetas)}</b></span>
+      <span>Items: <b>${fmt(itemsTotal)}</b></span>
+      <span>Storage: <b>${fmt(storageTotal)}</b></span>
+      <span>Key items: <b>${fmt(keyItemsTotal)}</b></span>
+      <span>Treasures (combined): <b>${fmt(treasuresTotal)}</b></span>
+      <span>Treasures (as-is): <b>${fmt(plainTreasuresTotal)}</b></span>
+      <span>Leftover gems: <b>${fmt(leftoverTotal)}</b></span>
+      ${(data.herbTotal || 0) > 0 ? `<span>Herbs: <b>${fmt(data.herbTotal)}</b></span>` : ""}
+      ${tradeShopGain > 0 ? `<span>Trade shop plan: <b>+${fmt(tradeShopGain)}</b></span>` : ""}
+    `;
+
+    const items = data.items || [];
+    document.getElementById("itemsSection").style.display = items.length ? "" : "none";
+    document.getElementById("itemsTotal").textContent = fmt(itemsTotal) + " ptas";
+    renderItemsTable(document.getElementById("itemsBody"), items);
+
+    const treasures = data.treasures || [];
+    document.getElementById("treasuresSection").style.display = treasures.length ? "" : "none";
+    document.getElementById("treasuresTotal").textContent = fmt(treasuresTotal) + " ptas";
+    const tBody = document.getElementById("treasuresBody");
+    tBody.innerHTML = "";
+    // Deliberately NOT sorted by value - the plugin already orders these to
+    // match the in-game treasure grid, which is what makes the list findable.
+    for (const t of treasures) {
+      const tr = document.createElement("tr");
+      const g = gemStatus(t);
+      if (g.done) tr.classList.add("row-done");
+      tr.innerHTML = `<td class="name">${treasureLabel(t)}</td><td class="num base-note">${fmt(t.basePrice)}</td><td class="gems-used">${g.html}</td><td class="num">${fmt(t.finalPrice)}</td>`;
+      tBody.appendChild(tr);
+    }
+
+    const storage = data.storage || [];
+    document.getElementById("storageSection").style.display = storage.length ? "" : "none";
+    document.getElementById("storageTotal").textContent = fmt(storageTotal) + " ptas";
+    renderItemsTable(document.getElementById("storageBody"), storage);
+
+    const plainTreasures = data.plainTreasures || [];
+    document.getElementById("plainTreasuresSection").style.display = plainTreasures.length ? "" : "none";
+    document.getElementById("plainTreasuresTotal").textContent = fmt(plainTreasuresTotal) + " ptas";
+    renderItemsTable(document.getElementById("plainTreasuresBody"), plainTreasures);
+
+    const leftover = data.leftoverGems || [];
+    document.getElementById("leftoverSection").style.display = leftover.length ? "" : "none";
+    document.getElementById("leftoverTotal").textContent = fmt(leftoverTotal) + " ptas";
+    renderItemsTable(document.getElementById("leftoverBody"), leftover);
+
+    const keyItems = data.keyItems || [];
+    document.getElementById("keyItemsSection").style.display = keyItems.length ? "" : "none";
+    document.getElementById("keyItemsTotal").textContent = fmt(keyItemsTotal) + " ptas";
+    renderItemsTable(document.getElementById("keyItemsBody"), keyItems);
+
+    const craftPlan = data.craftPlan || [];
+    document.getElementById("craftSection").style.display = craftPlan.length ? "" : "none";
+    document.getElementById("craftGain").textContent = "+" + fmt(data.craftGain || 0) + " ptas if crafted";
+    const craftBody = document.getElementById("craftBody");
+    craftBody.innerHTML = "";
+    for (const c of craftPlan) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="name">${c.name}</td><td class="num">${c.times}</td><td class="num">${c.rounds}</td><td class="num">${fmt(c.value)}</td>`;
+      craftBody.appendChild(tr);
+    }
+
+    const herbs = data.herbs || [];
+    const herbTotal = data.herbTotal || 0;
+    const herbRawTotal = data.herbRawTotal || 0;
+    const herbSteps = data.herbSteps || [];
+    document.getElementById("herbSection").style.display = herbs.length ? "" : "none";
+    document.getElementById("herbTotal").textContent = fmt(herbTotal) + " ptas";
+    const herbGain = herbTotal - herbRawTotal;
+    renderItemsTable(document.getElementById("herbBody"), herbs);
+    document.getElementById("herbStepsBlock").style.display = herbSteps.length ? "" : "none";
+    const herbStepsBody = document.getElementById("herbStepsBody");
+    herbStepsBody.innerHTML = "";
+    for (const s of herbSteps) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="name">${s}</td>`;
+      herbStepsBody.appendChild(tr);
+    }
+
+    // The catalog table below is advisory only. The combine plan above it is
+    // NOT - it is exactly what tradeShopGain adds into the grand total.
+    //
+    // Entries with no resale value (treasure maps, attache cases, upgrade
+    // tickets - things the merchant will not buy back) are filtered out:
+    // this table exists to answer "what is this worth in pesetas", and a
+    // wall of zero rows only buries the entries that actually have an
+    // answer. They stay in the JSON, just not on this table.
+    const allTradeItems = data.tradeItems || [];
+    const tradeItems = allTradeItems.filter((t) => t.totalSellValue > 0);
+    const hiddenTradeCount = allTradeItems.length - tradeItems.length;
+    const tradeTotal = tradeItems.reduce((s, t) => s + t.totalSellValue, 0);
+    document.getElementById("tradeSection").style.display = allTradeItems.length ? "" : "none";
+    // Unclaimed quest rewards are spendable only after handing them in, so
+    // the budget shows them as a distinct "+N pending" rather than merging
+    // them into a balance you cannot actually spend yet.
+    const spinelPending = data.spinelPending || 0;
+    const pendingQuests = data.pendingQuestCount || 0;
+    const spinelFromSales = data.spinelFromSales || 0;
+    const spinelExtras = [];
+    if (spinelPending > 0) {
+      spinelExtras.push(`+${spinelPending} from ${pendingQuests} unclaimed request${pendingQuests === 1 ? "" : "s"}`);
+    }
+    if (spinelFromSales > 0) {
+      spinelExtras.push(`+${spinelFromSales} from sellable request items`);
+    }
+    document.getElementById("spinelCount").textContent =
+      (data.spinelCount || 0) + (spinelExtras.length ? " " + spinelExtras.join(", ") : "");
+    document.getElementById("tradeTotal").textContent =
+      fmt(tradeTotal) + " ptas resale" + (hiddenTradeCount ? ` (${hiddenTradeCount} unsellable hidden)` : "");
+    const tradeBody = document.getElementById("tradeBody");
+    tradeBody.innerHTML = "";
+    const sortedTrade = [...tradeItems].sort((a, b) => a.spinelCost - b.spinelCost);
+    for (const t of sortedTrade) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="name">${t.name || "(unknown)"}</td><td class="num">${fmt(t.spinelCost)}</td><td class="num">${t.count}</td><td class="num">${fmt(t.totalSellValue)}</td>`;
+      tradeBody.appendChild(tr);
+    }
+
+    document.getElementById("tradePlanBlock").style.display = tradeShopRecommended.length ? "" : "none";
+    document.getElementById("tradePlanGain").textContent = "+" + fmt(tradeShopGain) + " ptas";
+    const tradePlanBody = document.getElementById("tradePlanBody");
+    tradePlanBody.innerHTML = "";
+    for (const t of tradeShopRecommended) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="name">${t.name || "(unknown)"}</td><td class="num">${fmt(t.spinelCost)}</td><td class="num">${t.count}</td>`;
+      tradePlanBody.appendChild(tr);
+    }
+
+    // What the shopping list above actually gets combined into - gems bought
+    // for a treasure that is ALSO being bought show up as one row here, the
+    // same shape as the main Combined Treasures table, just without the
+    // gem-status colouring (nothing is actually socketed yet - that
+    // red/green comparison only makes sense for treasures you already own).
+    const tradeCombos = data.tradeShopCombos || [];
+    const tradeComboBody = document.getElementById("tradeComboBody");
+    tradeComboBody.innerHTML = "";
+    for (const t of tradeCombos) {
+      const gemsText = (t.gemsUsed && t.gemsUsed.length)
+        ? t.gemsUsed.map((g) => g.name || "(unknown)").join(", ")
+        : "(no gems combined)";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td class="name">${t.name || "(unknown)"}</td><td class="num base-note">${fmt(t.basePrice)}</td><td class="gems-used">${gemsText}</td><td class="num">${fmt(t.finalPrice)}</td>`;
+      tradeComboBody.appendChild(tr);
+    }
+
+    // The plan must use the POST-purchase herb steps: buying a Yellow Herb
+    // changes the right answer entirely, so the owned-only steps would tell
+    // you to make the wrong combination. Falls back to the owned-only steps
+    // when the plan buys no herbs (or on an older DLL without the field).
+    const planHerbSteps = Array.isArray(data.tradeShopHerbSteps) && data.tradeShopHerbSteps.length
+      ? data.tradeShopHerbSteps : herbSteps;
+    const planHerbTotal = data.tradeShopHerbTotal || herbTotal;
+
+    buildPlan(data, { tradeShopGain, tradeShopRecommended, spinelPending, pendingQuests,
+                      herbSteps: planHerbSteps, herbTotal: planHerbTotal,
+                      herbRawTotal, tradeCombos });
+
+    document.getElementById("emptyState").style.display = "none";
+  }
+
+  // Assembles the single actionable list. Ordered by what has to happen
+  // first, not by size of payoff: unclaimed Spinels have to be collected
+  // before they can be spent, purchases have to happen before the things
+  // bought can be socketed. Crafting is excluded on purpose - it is the one
+  // advisory item that is irreversible and costs you usable ammo.
+  // "Mixed Herb (G+R)" -> "G+R", "Green Herb" -> "Green". The full names are
+  // right for the Herbs table but pure noise in a list of combine steps.
+  function shortHerb(name) {
+    const mixed = /^Mixed Herb \((.+)\)$/.exec(name);
+    if (mixed) return mixed[1];
+    return name.replace(/ Herb$/, "");
+  }
+
+  // ["Ruby","Ruby","Sapphire"] -> "2x Ruby, Sapphire"
+  function collapse(names) {
+    const order = [];
+    const counts = new Map();
+    for (const n of names) {
+      if (!counts.has(n)) order.push(n);
+      counts.set(n, (counts.get(n) || 0) + 1);
+    }
+    return order.map((n) => (counts.get(n) > 1 ? `${counts.get(n)}x ${n}` : n)).join(", ");
+  }
+
+  // Two Elegant Masks with different recommended gems need telling apart.
+  // The plugin numbers same-named pieces in grid order, so "#2" means the
+  // second one you meet reading the treasure screen top-down then right.
+  function treasureLabel(t) {
+    return t.ordinal ? `${t.name} #${t.ordinal}` : t.name;
+  }
+
+  function buildPlan(data, ctx) {
+    const steps = [];
+
+    if (ctx.spinelPending > 0) {
+      steps.push({
+        text: `Hand in ${ctx.pendingQuests} request${ctx.pendingQuests === 1 ? "" : "s"}`,
+        note: `+${ctx.spinelPending} Spinels`,
+      });
+    }
+
+    // Requests you can finish right now by selling something already held.
+    // The pesetas from the sale are counted as items already; the Spinels are
+    // the part that would otherwise be missed.
+    for (const q of (data.sellQuests || [])) {
+      steps.push({ text: `Sell ${q.requirement}`, note: `+${q.spinels} Spinels` });
+    }
+
+    if (ctx.tradeShopRecommended.length) {
+      const cost = ctx.tradeShopRecommended.reduce((s, t) => s + t.spinelCost, 0);
+      const names = ctx.tradeShopRecommended
+        .map((t) => (t.count > 1 ? `${t.count}x ${t.name}` : t.name))
+        .join(", ");
+      steps.push({
+        text: `Buy ${names}`,
+        note: `${cost} Spinels`,
+        blocked: ctx.spinelPending > 0 && cost > (data.spinelCount || 0)
+          ? "after handing in" : null,
+      });
+    }
+
+    for (const t of ctx.tradeCombos) {
+      const gems = (t.gemsUsed || []).map((g) => g.name);
+      if (gems.length) {
+        steps.push({ text: `${treasureLabel(t)} &larr; ${collapse(gems)}`, gain: t.finalPrice });
+      }
+    }
+
+    // Owned treasures whose recommended gems are not all in place yet, in the
+    // same order the treasure screen draws them.
+    for (const t of (data.treasures || [])) {
+      const g = gemStatus(t);
+      if (!g.done && (t.gemsUsed || []).length) {
+        steps.push({
+          text: `${treasureLabel(t)} &larr; ${collapse(t.gemsUsed.map((x) => x.name))}`,
+          gain: t.finalPrice,
+        });
+      }
+    }
+
+    for (const s of ctx.herbSteps) {
+      const parts = s.split(" + ").map(shortHerb).join(" + ");
+      steps.push({ text: `Mix ${parts}` });
+    }
+
+    document.getElementById("planSection").style.display = steps.length ? "" : "none";
+    document.getElementById("planGain").textContent =
+      ctx.tradeShopGain > 0 ? `+${fmt(ctx.tradeShopGain)}` : "";
+
+    const list = document.getElementById("planList");
+    list.innerHTML = "";
+    for (const s of steps) {
+      const li = document.createElement("li");
+      let html = s.text;
+      if (s.gain) html += `<span class="step-gain">${fmt(s.gain)}</span>`;
+      if (s.note) html += `<span class="step-note">${s.note}</span>`;
+      if (s.blocked) html += `<span class="step-blocked">${s.blocked}</span>`;
+      li.innerHTML = html;
+      list.appendChild(li);
+    }
+  }
+
+  // Dark (the default) or light, as set in the game window. Remembered for
+  // the next visit, so the page does not flash the wrong theme first.
+  function setTheme(dark) {
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    try { localStorage.setItem("re4nw.dark", dark ? "1" : "0"); } catch (e) {}
+  }
+  (function () {
+    let v = null;
+    try { v = localStorage.getItem("re4nw.dark"); } catch (e) {}
+    setTheme(v !== "0");
+  })();
+
+  // The plugin rewrites net_worth.js next to this page every couple of
+  // seconds. Opened from disk, fetch() is blocked, so the page re-adds it as
+  // a script, which calls RE4NW_receive.
+  let lastSeen = 0, lastAt = 0, lastKey = "", lastPaused = false;
+  window.RE4NW_receive = function (feed) {
+    lastSeen = Date.now();
+    lastAt = feed.at || 0;
+    lastPaused = feed.paused === true;
+    if (typeof feed.dark === "boolean") setTheme(feed.dark);
+    renderStatus();
+    const key = JSON.stringify(feed.data);
+    if (key === lastKey) return;
+    lastKey = key;
+    if (feed.data) render(feed.data);
+  };
+
+  function renderStatus() {
+    const dot = document.getElementById("dot");
+    const st = document.getElementById("statusText");
+    const age = lastAt ? Date.now() / 1000 - lastAt : Infinity;
+    if (!lastSeen || age > 10) {
+      dot.className = "dot off";
+      st.textContent = lastSeen ? "The game is not running. Showing the last figures." : "Waiting for the game.";
+    } else if (lastPaused) {
+      dot.className = "dot";
+      st.textContent = "Paused while the game loads or saves.";
+    } else {
+      dot.className = "dot live";
+      st.textContent = "Live from the game.";
+    }
+  }
+
+  function poll() {
+    const old = document.getElementById("feed");
+    if (old) old.remove();
+    const el = document.createElement("script");
+    el.id = "feed";
+    el.src = DATA_PATH + "?t=" + Date.now();
+    el.onerror = () => {
+      if (!lastSeen) document.getElementById("emptyState").style.display = "block";
+      renderStatus();
+    };
+    document.body.appendChild(el);
+  }
+
+  poll();
+  setInterval(poll, POLL_MS);
+</script>
+
+</body>
+</html>

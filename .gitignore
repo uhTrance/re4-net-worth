@@ -1,0 +1,4 @@
+build/
+dist/
+reframework/plugins/*.dll
+reframework/data/re4_net_worth/net_worth.js
